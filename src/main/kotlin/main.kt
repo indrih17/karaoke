@@ -11,10 +11,10 @@ fun main() = runBlocking {
     val generateSoundUrl =
         "https://nextup.com/ivona/php/nextup-polly/CreateSpeech/CreateSpeechGet3.php?voice=Maxim&language=ru-RU&text="
     val textLines = arrayOf(
-        "А, мой, мальчик, едет на девятке",
-        "По автостраде, вдоль ночных дорог",
-        "Я, круужилась, с ним на танцплощадке",
-        "А ты и дальше, будешь одинок"
+        "А, мой, мальчик, едет на девятке\n",
+        "По автостраде, вдоль ночных дорог\n",
+        "Я, круужилась, с ним на танцплощадке\n",
+        "А ты и дальше, будешь одинок\n"
     )
     val words = ArrayList<String>()
     val soundArr = ArrayList<InputStream>()
@@ -61,55 +61,15 @@ suspend fun playAndWrite(soundArr: ArrayList<InputStream>, words: ArrayList<Stri
 }
 
 suspend fun write(words: ArrayList<String>) {
-    var curWord = 0
-    print(words[curWord++] + " ")
-    delay(400)
-    print(words[curWord++] + " ")
-    delay(400)
-    print(words[curWord++] + " ")
-    delay(800)
-    print(words[curWord++] + " ")
-    delay(450)
-    print(words[curWord++] + " ")
-    delay(200)
-    println(words[curWord++])
-    delay(700)
+    val delays: Array<Long> = arrayOf(400, 400, 800, 450, 200, 700, 500, 1000, 600, 600, 700, 500, 900, 600, 600, 600, 700, 500, 400,
+        400, 600, 600)
 
-    print(words[curWord++] + " ")
-    delay(500)
-    print(words[curWord++] + " ")
-    delay(1000)
-    print(words[curWord++] + " ")
-    delay(600)
-    print(words[curWord++] + " ")
-    delay(600)
-    println(words[curWord++])
-    delay(700)
-
-    print(words[curWord++] + " ")
-    delay(500)
-    print(words[curWord++] + " ")
-    delay(900)
-    print(words[curWord++] + " ")
-    delay(600)
-    print(words[curWord++] + " ")
-    delay(600)
-    print(words[curWord++] + " ")
-    delay(600)
-    println(words[curWord++])
-    delay(700)
-
-    print(words[curWord++] + " ")
-    delay(500)
-    print(words[curWord++] + " ")
-    delay(400)
-    print(words[curWord++] + " ")
-    delay(400)
-    print(words[curWord++] + " ")
-    delay(600)
-    print(words[curWord++] + " ")
-    delay(600)
-    println(words[curWord])
+    for (i in 0..words.size){
+        print(words[i] + " ")
+        try {
+            delay(delays[i])
+        } catch (e: IndexOutOfBoundsException){}
+    }
 }
 
 suspend fun printPhoto() {
