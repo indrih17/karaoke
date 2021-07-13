@@ -7,73 +7,90 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
+const val generateSoundUrl = "https://nextup.com/ivona/php/nextup-polly/CreateSpeech/CreateSpeechGet3.php?voice=Maxim&language=ru-RU&text="
+
+val delays = longArrayOf(
+    400,
+    400,
+    800,
+    450,
+    200,
+    700,
+    500,
+    1000,
+    600,
+    600,
+    700,
+    500,
+    900,
+    600,
+    600,
+    600,
+    700,
+    500,
+    400,
+    400,
+    600,
+    600
+)
+val textLines = listOf(
+    "А, мой, мальчик, едет на девятке\n",
+    "По автостраде, вдоль ночных дорог\n",
+    "Я, круужилась, с ним на танцплощадке\n",
+    "А ты и дальше, будешь одинок\n"
+)
+
 fun main() = runBlocking {
-    val generateSoundUrl =
-        "https://nextup.com/ivona/php/nextup-polly/CreateSpeech/CreateSpeechGet3.php?voice=Maxim&language=ru-RU&text="
-    val textLines = arrayOf(
-        "А, мой, мальчик, едет на девятке\n",
-        "По автостраде, вдоль ночных дорог\n",
-        "Я, круужилась, с ним на танцплощадке\n",
-        "А ты и дальше, будешь одинок\n"
-    )
-    val words = ArrayList<String>()
-    val soundArr = ArrayList<InputStream>()
+    val words = textLines.map { line -> line.split(" ") }.flatten()
+    val sounds = with(HttpClient.newBuilder().build()) {
+        textLines.map { line ->
+            val generateSoundRequest = HttpRequest.newBuilder()
+                .uri(URI.create(generateSoundUrl + URLEncoder.encode(line, "UTF-8")))
+                .build()
+            val soundUrl = send(
+                generateSoundRequest,
+                HttpResponse.BodyHandlers.ofString()
+            ).body()
+            val playSoundRequest = HttpRequest.newBuilder()
+                .uri(URI.create(soundUrl))
+                .build()
 
-    textLines.forEach { line ->
-        words.addAll(line.split(" "))
+            send(
+                playSoundRequest,
+                HttpResponse.BodyHandlers.ofInputStream()
+            ).body()
+        }
     }
 
-    for (line in textLines) {
-        val client = HttpClient.newBuilder().build()
-        val generateSoundRequest = HttpRequest.newBuilder()
-            .uri(URI.create(generateSoundUrl + URLEncoder.encode(line, "UTF-8")))
-            .build()
-
-        val soundUrl = client.send(generateSoundRequest, HttpResponse.BodyHandlers.ofString()).body()
-
-        val playSoundRequest = HttpRequest.newBuilder()
-            .uri(URI.create(soundUrl))
-            .build()
-
-        soundArr.add(client.send(playSoundRequest, HttpResponse.BodyHandlers.ofInputStream()).body())
-    }
-
-    playAndWrite(soundArr, words)
+    playAndWrite(sounds, words)
     printPhoto()
 }
 
-suspend fun playAndWrite(soundArr: ArrayList<InputStream>, words: ArrayList<String>) = withContext(Dispatchers.IO) {
+suspend fun playAndWrite(
+    sounds: List<InputStream>,
+    words: List<String>
+) = withContext(Dispatchers.IO) {
     listOf(
         launch {
             write(words)
         },
         launch {
-            var playMP3: Player
-
-            soundArr.forEachIndexed { index, element ->
-                playMP3 = Player(element)
-                playMP3.play()
-
+            sounds.forEach { sound ->
+                Player(sound).play()
                 delay(400L)
             }
         }
     ).joinAll()
 }
 
-suspend fun write(words: ArrayList<String>) {
-    val delays: Array<Long> = arrayOf(400, 400, 800, 450, 200, 700, 500, 1000, 600, 600, 700, 500, 900, 600, 600, 600, 700, 500, 400,
-        400, 600, 600)
-
-    for (i in 0..words.size){
-        print(words[i] + " ")
-        try {
-            delay(delays[i])
-        } catch (e: IndexOutOfBoundsException){}
-    }
+suspend fun write(words: List<String>) {
+    words.onEach { word -> print("$word ") }
+        .mapIndexedNotNull { index, _ -> delays.getOrNull(index) }
+        .forEach { currentDelay -> delay(currentDelay) }
 }
 
 suspend fun printPhoto() {
-    val photo = arrayOf(
+    arrayOf(
         "+++++++++++++==+++++++++++++++++++++================+======+=+===+============++++++=++++++++++++++++====++=============",
         "+++++++++++++++++++=+++++++++==========================%%%%%%===========================================================",
         "+++++++++++++++++++++=++++++====================%@@###############@%====================================================",
@@ -113,8 +130,7 @@ suspend fun printPhoto() {
         "+++++==%###########################################@====++++++++++++==%##################################@@@@@@@@@@@%===",
         "+++++=%############################################@==++++++++++++++++####################################@@@@@@@@@@%===",
         "++++==#############################################@=++++++*****+++++%#####################################@@@@@@@@@%==="
-    )
-    photo.forEach {
+    ).forEach {
         println(it)
         delay(75)
     }
