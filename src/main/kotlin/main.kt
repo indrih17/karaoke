@@ -41,7 +41,7 @@ val textLines = listOf(
 )
 
 fun main() = runBlocking {
-    val words = textLines.map { line -> line.split(" ") }.flatten()
+    val words = textLines.flatMap { it.split(" ") }
     val sounds = with(HttpClient.newBuilder().build()) {
         textLines.map { line ->
             val generateSoundRequest = HttpRequest.newBuilder()
